@@ -217,8 +217,16 @@ app.get('/', (req, res) => {
 // HubSpot OAuth routes
 app.get('/auth/hubspot', (req, res) => {
   const clientId = process.env.HUBSPOT_CLIENT_ID;
-  // Use port 5000 for redirect URI
-  const redirectUri = encodeURIComponent('http://localhost:5000/oauth/callback');
+  
+  // Determine the appropriate redirect URI based on environment
+  let redirectUri;
+  if (isProduction) {
+    // Use production URL
+    redirectUri = encodeURIComponent('https://hubspot-crm-connector.vercel.app/oauth/callback');
+  } else {
+    // Use localhost for development
+    redirectUri = encodeURIComponent('http://localhost:5000/oauth/callback');
+  }
   
   // Updated scopes to match what's configured in HubSpot developer portal
   const scope = encodeURIComponent('crm.lists.read crm.objects.contacts.read crm.objects.custom.read crm.schemas.contacts.read crm.schemas.custom.read oauth');
@@ -262,7 +270,14 @@ app.get('/oauth/callback', async (req, res) => {
     
     const clientId = process.env.HUBSPOT_CLIENT_ID;
     const clientSecret = process.env.HUBSPOT_CLIENT_SECRET;
-    const redirectUri = 'http://localhost:5000/oauth/callback';
+    
+    // Use the correct redirect URI based on environment
+    let redirectUri;
+    if (isProduction) {
+      redirectUri = 'https://hubspot-crm-connector.vercel.app/oauth/callback';
+    } else {
+      redirectUri = 'http://localhost:5000/oauth/callback';
+    }
     
     // Exchange code for tokens
     const response = await axios.post('https://api.hubapi.com/oauth/v1/token', null, {
