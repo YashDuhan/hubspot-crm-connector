@@ -472,10 +472,22 @@ app.get('/api/hubspot/contacts', async (req, res) => {
     // Get the access token
     const accessToken = hubspotTokens.access_token;
     
+    // Get limit from query params or use default
+    let limit = 100; // Default limit
+    if (req.query.limit) {
+      const requestedLimit = parseInt(req.query.limit);
+      // Validate limit (ensure it's a positive number and not too large)
+      if (!isNaN(requestedLimit) && requestedLimit > 0 && requestedLimit <= 500) {
+        limit = requestedLimit;
+      }
+    }
+    
+    console.log(`Fetching contacts with limit: ${limit}`);
+    
     // Call HubSpot API to get contacts - using simple endpoint first
     const response = await axios.get('https://api.hubapi.com/crm/v3/objects/contacts', {
       params: {
-        limit: 100 // Limit results to avoid large payloads
+        limit: limit
       },
       headers: {
         'Authorization': `Bearer ${accessToken}`
@@ -489,6 +501,7 @@ app.get('/api/hubspot/contacts', async (req, res) => {
       status: 'success',
       message: 'Retrieved contacts successfully',
       count: contacts.length,
+      limit: limit,
       contacts: contacts,
       links: {
         lists: '/api/hubspot/lists',
@@ -535,8 +548,23 @@ app.get('/api/hubspot/lists', async (req, res) => {
     
     const accessToken = hubspotTokens.access_token;
     
-    // Call HubSpot API to get lists - using correct endpoint
+    // Get limit from query params or use default
+    let limit = 100; // Default limit
+    if (req.query.limit) {
+      const requestedLimit = parseInt(req.query.limit);
+      // Validate limit (ensure it's a positive number and not too large)
+      if (!isNaN(requestedLimit) && requestedLimit > 0 && requestedLimit <= 500) {
+        limit = requestedLimit;
+      }
+    }
+    
+    console.log(`Fetching lists with limit: ${limit}`);
+    
+    // Call HubSpot API to get lists - using correct endpoint with limit parameter
     const response = await axios.get('https://api.hubapi.com/contacts/v1/lists', {
+      params: {
+        count: limit
+      },
       headers: {
         'Authorization': `Bearer ${accessToken}`
       }
@@ -548,6 +576,7 @@ app.get('/api/hubspot/lists', async (req, res) => {
     res.json({
       status: 'success',
       count: lists.length,
+      limit: limit,
       lists: lists,
       links: {
         contacts: '/api/hubspot/contacts',
